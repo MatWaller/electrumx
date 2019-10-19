@@ -45,6 +45,8 @@ from electrumx.lib.script import (_match_ops, Script, ScriptError,
 import electrumx.lib.tx as lib_tx
 import electrumx.lib.tx_dash as lib_tx_dash
 import electrumx.lib.tx_axe as lib_tx_axe
+import electrumx.lib.tx_veil as lib_tx_veil
+
 import electrumx.server.block_processor as block_proc
 import electrumx.server.daemon as daemon
 from electrumx.server.session import (ElectrumX, DashElectrumX,
@@ -3300,3 +3302,46 @@ class GravityZeroCoin(ScryptMixin, Coin):
     RPC_PORT = 36442
     ESTIMATE_FEE = 0.01
     RELAY_FEE = 0.01
+
+
+class Veil(Coin):
+    NAME = "Veil"
+    SHORTNAME = "Veil"
+    NET = "mainnet"
+    DESERIALIZER = lib_tx_veil.DeserializerVeil
+    XPUB_VERBYTES = bytes.fromhex("043587CF")
+    XPRV_VERBYTES = bytes.fromhex("04358394")
+    STEALTH_ADDRESS = bytes.fromhex("84")
+    P2PKH_VERBYTE = bytes.fromhex("3A")
+    P2SH_VERBYTES = [bytes.fromhex("7A")]
+    WIF_BYTE = bytes.fromhex("EF")
+    GENESIS_HASH = ('051be91d426dfff0a2a3b8895a0726d997c2749c501b581dd739687e706d7f0b')
+    TX_COUNT = 1
+    TX_COUNT_HEIGHT = 289129
+    TX_PER_BLOCK = 4
+    RPC_PORT = 58812
+    PEERS = [
+        'veilseed.presstab.pw s t',
+        'veil.seed.fuzzbawls.pw s t',
+        'veil.seed2.fuzzbawls.pw s t'
+    ]
+    ZEROCOIN_HEADER = 112
+    ZEROCOIN_START_HEIGHT = 1500
+    ZEROCOIN_BLOCK_VERSION = 2
+    BLOCK_PROCESSOR = block_proc.VeilBlockProcessor
+
+    @classmethod
+    def is_mtp(cls, header):
+        from electrumx.lib.util import unpack_le_uint32_from, hex_to_bytes
+        if isinstance(header, str):
+            nVersion, = unpack_le_uint32_from(hex_to_bytes(header[0:4*2]))
+        elif isinstance(header, bytes):
+            nVersion, = unpack_le_uint32_from(header[0:4])
+        else:
+            raise "Cannot handle the passed type"
+        return nVersion & 0x1000
+
+    @classmethod
+    def header_hash(cls, header):
+        '''Given a header return the hash.'''
+        return double_sha256(header)

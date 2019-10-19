@@ -814,3 +814,12 @@ class LTORBlockProcessor(BlockProcessor):
                     add_touched(cache_value[:-12])
 
         self.tx_count -= len(txs)
+
+
+class VeilBlockProcessor(BlockProcessor):
+    async def calc_reorg_range(self, count):
+        start, count = await super().calc_reorg_range(count)
+        if start > 0:
+            start -= 1
+            count += 1
+        return start, count
